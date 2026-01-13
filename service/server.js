@@ -36,23 +36,22 @@ Ketik:
 
   // create sticker
 if(input == "!sticker"){
+  let mediaMessage = msg;
   if(msg.hasQuotedMsg){
     const quoted = await msg.getQuotedMessage()
     if (quoted.hasMedia){
      mediaMessage = quoted
-    } else{
-      mediaMessage = msg
     }
-  }
-  if(!mediaMessage){
-    msg.reply('⚠️ kirim atau reply foto dengan !sticker')
   }
   const media = await mediaMessage.downloadMedia();
   await client.sendMessage(msg.from , media , {
     sendMediaAsSticker:true,
     stickerAuthor : "kurobot",
-    stickerName : 'Sticker from kurobot'
+    stickerName : 'Sticker by kurobot'
   })
+  if(!mediaMessage){
+    msg.reply('⚠️ kirim atau reply foto dengan !sticker')
+  }
 }
 
 
