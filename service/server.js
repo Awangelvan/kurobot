@@ -8,10 +8,7 @@ dotenv.config();
 
 const client = new Client();
 
-client.on("qr", (qr) => {
-  qrcode.generate(qr, { small: true });
-  console.log("Scan QR untuk login");
-});
+client.on("qr", (qr) => {});
 
 client.on("ready", () => {
   console.log("===KuroBot siap digunakan!===");
@@ -23,12 +20,12 @@ client.on("message", async (msg) => {
   // ===== MENU =====
   if (input === "menu") {
     return msg.reply(
-`👋 *SELAMAT DATANG DI KUROBOT*
+`👋 *WELLCOME TO KUROBOT*
 ============================
-Ketik:
+Type:
 1️⃣ info
-2️⃣ !rmbg (reply foto)
-2️⃣ !sticker (reply foto) atau caption
+2️⃣ !rmbg (reply photo)
+2️⃣ !sticker (reply photo) or caption
 ============================
 🤖 KuroBot`
     );
@@ -50,7 +47,7 @@ if(input == "!sticker"){
     stickerName : 'Sticker by kurobot'
   })
   if(!mediaMessage){
-    msg.reply('⚠️ kirim atau reply foto dengan !sticker')
+    msg.reply('⚠️ send or reply photo with *!sticker*')
   }
 }
 
@@ -59,24 +56,24 @@ if(input == "!sticker"){
   if (input === "info") {
     return msg.reply(
 `🤖 *KUROBOT*
-Bot untuk menghapus background foto.
-dan mengenerate foto => sticker
+This is a bot to remove background
+photo and generate photo => sticker
 
-📌 Cara pakai hapus background:
-1. Kirim foto
-2. Reply foto tersebut dengan:
+📌 Step to remove background:
+1. send a photo
+2. Reply that photo with:
    *!rmbg*
 
-📌 Cara pakai hapus background:
-1. Kirim foto dengan caption *!sticker* atau
-2. Reply foto tersebut dengan *!sticker*`
+📌 Step to generate a sticker:
+1. send photo with caption *!sticker* or
+2. Reply photo with command *!sticker*`
     );
   }
   const quotedMsg = await msg.getQuotedMessage();
   // ===== REMOVE BG =====
   if (input === "!rmbg") {
     if (!quotedMsg || !quotedMsg.hasMedia) {
-      return msg.reply("❌ Reply ke *foto* dengan perintah *!rmbg*");
+      return msg.reply("❌ Reply photo with command *!rmbg*");
     }
 
 
@@ -88,7 +85,7 @@ dan mengenerate foto => sticker
     formData.append("size", "auto");
 
     try {
-      msg.reply("⏳ Sedang menghapus background...");
+      msg.reply("⏳ removing background...");
 
       const response = await axios.post(
         "https://api.remove.bg/v1.0/removebg",
@@ -110,7 +107,7 @@ dan mengenerate foto => sticker
       await msg.reply(output);
     } catch (error) {
       console.error(error.response?.data || error.message);
-      msg.reply("❌ Gagal menghapus background (cek API key / limit)");
+      msg.reply("❌ Failed to remove background the day limit has been reached");
     }
     return;
   }
@@ -118,7 +115,7 @@ dan mengenerate foto => sticker
 
   // ===== DEFAULT =====
   if (!msg.fromMe) {
-    msg.reply("Ketik *menu* untuk melihat perintah 🤖");
+    msg.reply("type *menu* to see a command 🤖");
   }
 
 });
