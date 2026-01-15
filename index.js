@@ -39,6 +39,7 @@ async function startBot() {
   });
 
   sock.ev.on('messages.upsert', async ({ messages }) => {
+    messages.toLocaleString().toLocaleLowerCase();
     const msg = messages[0];
     if (!msg.message || msg.key.fromMe) return;
 
@@ -46,6 +47,30 @@ async function startBot() {
     const text =
       msg.message.conversation ||
       msg.message.extendedTextMessage?.text;
+
+    if(text == "menu"){
+        return sock.sendMessage(from,{
+            text :
+`===WELLCOME TO KUROBOT===
+type :
+1. info
+2. *!sticker* reply to photo
+to generate sticker            
+🤖kurobot 
+`
+        })
+    }
+
+ if(text == "info"){
+        return sock.sendMessage(from,{
+            text :
+`===WELLCOME TO KUROBOT===
+this is a wabot to generate photo to sticker
+how to use it :
+--reply photo with *!sticker*
+🤖KUROBOT
+`
+        })}
 
     // ===== STICKER COMMAND =====
     if (text === "!sticker") {
