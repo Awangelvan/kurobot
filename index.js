@@ -1,5 +1,6 @@
 import {
    makeWASocket,
+   downloadContentFromMessage,
   useMultiFileAuthState,
   DisconnectReason,
   downloadMediaMessage
@@ -73,7 +74,18 @@ how to use it :
         })}
 
     // ===== STICKER COMMAND =====
+    if(msg.message?.imageMessage && msg.message?.imageMessage.caption == "!sticker"){
+        const inputMedia = await downloadContentFromMessage(msg.message.imageMessage,'image')
+        let buffer = Buffer.from([])
+        for await(const chunk of inputMedia){
+          buffer = Buffer.concat([buffer,chunk])
+        }
+        const stickerBuffer = await sharp(buffer).resize(512,512,{fit : 'contain'}).toFormat('webp').toBuffer()
+
+        await sock.sendMessage(from,{sticker:stickerBuffer})
+      }
     if (text === "!sticker") {
+      
       const quoted =
         msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
 
