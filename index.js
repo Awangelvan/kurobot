@@ -6,11 +6,15 @@ import {
   downloadMediaMessage
 } from "@whiskeysockets/baileys";
 
+import ffmpegPath from "ffmpeg-static";
+import Ffmpeg from "fluent-ffmpeg";
 import qrcode from 'qrcode-terminal'
 import pino from 'pino';
 import fs from 'fs'
 import path from 'path';
 import sharp from 'sharp';
+
+
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("session");
@@ -46,8 +50,8 @@ async function startBot() {
 
     const from = msg.key.remoteJid;
     const text =
-      msg.message.conversation ||
-      msg.message.extendedTextMessage?.text;
+      msg.message.conversation||
+      msg.message.extendedTextMessage?.text.toLocaleLowerCase();
 
     if(text == "menu"){
         return sock.sendMessage(from,{
@@ -65,29 +69,73 @@ to generate sticker
  if(text == "info"){
         return sock.sendMessage(from,{
             text :
-`===WELLCOME TO KUROBOT===
+`==========WELLCOME TO KUROBOT==========
+
 this is a wabot to generate photo to sticker
 how to use it :
 --reply photo with *!sticker*
+
 🤖KUROBOT
 `
         })}
 
-    // ===== STICKER COMMAND =====
-    if(msg.message?.imageMessage && msg.message?.imageMessage.caption == "!sticker"){
-        const inputMedia = await downloadContentFromMessage(msg.message.imageMessage,'image')
+// =======GENERATE STICKER FROM VIDEO OR GIF========
+if(msg.message?.videoMessage.gifPlayback && msg.message.videoMessage.caption == "!sticker"){
+  const videoPath = path.join("temp", "input.mp4");
+      const stickerGifPath = path.join("temp", "output.webp");
+      
+        const inputMedia = await downloadContentFromMessage(msg.message.videoMessage ,'video')
+        //download image 
         let buffer = Buffer.from([])
         for await(const chunk of inputMedia){
           buffer = Buffer.concat([buffer,chunk])
         }
+
+        fs.writeFileSync(videoPath,buffer)
+
+        //generate sticker
+        Ffmpeg.setFfmpegPath(ffmpegPath)
+        
+        await new Promise ((resolve ,reject) => {
+        Ffmpeg(videoPath).outputOptions([
+        "-vf fps=15,scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000",
+       "-an",
+        "-loop 0",
+        "-t 3"
+        ]).toFormat('webp').save(stickerGifPath)
+          .on('end',resolve)
+          .on('error',reject)        
+        })
+        //send sticker
+        const gifSticker = fs.readFileSync(stickerGifPath)
+        await sock.sendMessage(from,{sticker:gifSticker})
+
+
+fs.unlinkSync(videoPath)
+fs.unlinkSync(stickerGifPath)
+      }
+
+    // ===== STICKER COMMAND PHOTO=====
+    if(msg.message?.imageMessage && msg.message?.imageMessage.caption == "!sticker"){
+        const inputMedia = await downloadContentFromMessage(msg.message.imageMessage ,'image')
+        //download image 
+        let buffer = Buffer.from([])
+        for await(const chunk of inputMedia){
+          buffer = Buffer.concat([buffer,chunk])
+        }
+
+        //generate sticker
         const stickerBuffer = await sharp(buffer).resize(512,512,{fit : 'contain'}).toFormat('webp').toBuffer()
 
+        //send sticker
         await sock.sendMessage(from,{sticker:stickerBuffer})
       }
-    if (text === "!sticker") {
+
+      // reply command
+      if (text === "!sticker") {
       
       const quoted =
-        msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
+        msg.message.extendedTextMessage?.contextInfo?.quotedMessage ;
 
       if (!quoted || !quoted.imageMessage) {
         return sock.sendMessage(from, {
@@ -111,8 +159,10 @@ how to use it :
 
       const inputPath = path.join("temp", "input.png");
       const outputPath = path.join("temp", "sticker.webp");
-
+      
       fs.writeFileSync(inputPath, buffer);
+      
+      
 
       // convert to webp
       await sharp(inputPath)
