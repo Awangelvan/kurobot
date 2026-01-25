@@ -80,12 +80,12 @@ how to use it :
         })}
 
 // =======GENERATE STICKER FROM VIDEO OR GIF========
-if(msg.message?.videoMessage.gifPlayback && msg.message.videoMessage.caption == "!sticker"){
+if(msg.message?.videoMessage && msg.message.videoMessage.caption == "!sticker"){
   const videoPath = path.join("temp", "input.mp4");
       const stickerGifPath = path.join("temp", "output.webp");
       
         const inputMedia = await downloadContentFromMessage(msg.message.videoMessage ,'video')
-        //download image 
+        //download short video or gif 
         let buffer = Buffer.from([])
         for await(const chunk of inputMedia){
           buffer = Buffer.concat([buffer,chunk])
@@ -137,14 +137,53 @@ fs.unlinkSync(stickerGifPath)
       const quoted =
         msg.message.extendedTextMessage?.contextInfo?.quotedMessage ;
 
-      if (!quoted || !quoted.imageMessage) {
-        return sock.sendMessage(from, {
-          text: "⚠️ Reply foto dengan *!sticker*"
-        });
+        // reply gif or short video
+      if(quoted.videoMessage){
+
+        const buffer = await downloadMediaMessage(
+          {
+            message: quoted,
+            key: msg.key
+          },
+            "buffer",
+        {},
+        {
+          logger: pino({ level: "silent" }),
+          reuploadRequest: sock.updateMediaMessage
+        }
+      );
+
+      const inputPath = path.join("temp", "input.mp4");
+      const outputPath = path.join("temp", "output.webp");
+      
+      fs.writeFileSync(inputPath, buffer);
+      
+      //convert fo ffmpeg
+      Ffmpeg.setFfmpegPath(ffmpegPath)
+      
+      await new Promise ((resolve ,reject) => {
+        Ffmpeg(inputPath).outputOptions([
+          "-vf fps=15,scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000",
+          "-an",
+          "-loop 0",
+          "-t 3"
+        ]).toFormat('webp').save(outputPath)
+        .on('end',resolve)
+        .on('error',reject)        
+      })
+        //send sticker
+        const gifSticker = fs.readFileSync(outputPath)
+        await sock.sendMessage(from,{sticker:gifSticker})
+
+
+      fs.unlinkSync(inputPath)
+      fs.unlinkSync(outputPath)
       }
 
-      // download image
-      const buffer = await downloadMediaMessage(
+      // reply for image
+      if(quoted.imageMessage){
+      
+        const buffer = await downloadMediaMessage(
         {
           message: quoted,
           key: msg.key
@@ -174,12 +213,25 @@ fs.unlinkSync(stickerGifPath)
 
       await sock.sendMessage(from, {
         sticker: stickerBuffer
-      });
+      }
+    );
 
       // cleanup
       fs.unlinkSync(inputPath);
       fs.unlinkSync(outputPath);
-    }
+
+
+      }
+      // no media send
+      if (!quoted && !quoted.imageMessage && !quoted.videoMessage) {
+        return sock.sendMessage(from, {
+          text: "⚠️ Reply foto dengan *!sticker*"
+        });
+      }
+
+
+      // download image
+          }
   });
 }
 
