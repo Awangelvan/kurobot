@@ -11,7 +11,6 @@ import Ffmpeg from "fluent-ffmpeg";
 import qrcode from 'qrcode-terminal'
 import pino from 'pino';
 import fs from 'fs'
-import path from 'path';
 import sharp from 'sharp';
 
 
@@ -44,14 +43,15 @@ async function startBot() {
   });
 
   sock.ev.on('messages.upsert', async ({ messages }) => {
-    messages.toLocaleString().toLocaleLowerCase();
     const msg = messages[0];
+    const id =  Date.now()
     if (!msg.message || msg.key.fromMe) return;
 
     const from = msg.key.remoteJid;
-    const text =
+    const command =
       msg.message.conversation||
-      msg.message.extendedTextMessage?.text.toLocaleLowerCase();
+      msg.message.extendedTextMessage?.text;
+    const text = command.toLocaleLowerCase();
 
     if(text == "menu"){
         return sock.sendMessage(from,{
@@ -69,9 +69,10 @@ to generate sticker
  if(text == "info"){
         return sock.sendMessage(from,{
             text :
-`==========WELLCOME TO KUROBOT==========
+`====WELLCOME TO KUROBOT====
 
-this is a wabot to generate photo to sticker
+this is a wabot to generate photo 
+to sticker
 how to use it :
 --reply photo with *!sticker*
 
@@ -81,8 +82,8 @@ how to use it :
 
 // =======GENERATE STICKER FROM VIDEO OR GIF========
 if(msg.message?.videoMessage && msg.message.videoMessage.caption == "!sticker"){
-  const videoPath = path.join("temp", "input.mp4");
-      const stickerGifPath = path.join("temp", "output.webp");
+  const videoPath = `temp/${id}.mp4`;
+      const stickerGifPath = `temp/${id}.webp`;
       
         const inputMedia = await downloadContentFromMessage(msg.message.videoMessage ,'video')
         //download short video or gif 
@@ -153,8 +154,8 @@ fs.unlinkSync(stickerGifPath)
         }
       );
 
-      const inputPath = path.join("temp", "input.mp4");
-      const outputPath = path.join("temp", "output.webp");
+      const inputPath = `temp/${id}.mp4`;
+      const outputPath = `temp/${id}.webp`;
       
       fs.writeFileSync(inputPath, buffer);
       
@@ -196,8 +197,8 @@ fs.unlinkSync(stickerGifPath)
         }
       );
 
-      const inputPath = path.join("temp", "input.png");
-      const outputPath = path.join("temp", "sticker.webp");
+      const inputPath = `temp/${id}.png`;
+      const outputPath = `temp/${id}.webp`;
       
       fs.writeFileSync(inputPath, buffer);
       
@@ -218,7 +219,7 @@ fs.unlinkSync(stickerGifPath)
 
       // cleanup
       fs.unlinkSync(inputPath);
-      fs.unlinkSync(outputPath);
+      fs.unlinkSync(outputPath); 
 
 
       }
