@@ -143,7 +143,7 @@ if(msg.message?.videoMessage && msg.message.videoMessage.caption == "!sticker"){
         }
 
         //generate sticker
-        const stickerBuffer = await sharp(buffer).resize(512,512,{fit : 'cover'}).toFormat('webp').toBuffer()
+        const stickerBuffer = await sharp(buffer).resize(512,512,{fit : 'contain'}).toFormat('webp').toBuffer()
         
         //send sticker
         await sock.sendMessage(from,{sticker:stickerBuffer})
@@ -223,7 +223,7 @@ if(msg.message?.videoMessage && msg.message.videoMessage.caption == "!sticker"){
       
       // convert to webp
       await sharp(inputPath)
-      .resize(512, 512, { fit: "fill" })
+      .resize(512, 512, { fit: 'contain' })
       .toFormat("webp")
       .toFile(outputPath);
 
