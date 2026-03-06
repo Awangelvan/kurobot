@@ -13,31 +13,31 @@ import pino from 'pino';
 import fs from 'fs'
 import sharp from 'sharp';
 
-const taskQueue = [];
-let isProccessing = false ;
+// const taskQueue = [];
+// let isProccessing = false ;
 
-async function queueProccess() {
-  if (isProccessing) return ;
-  if(taskQueue.length === 0) return;
+// async function queueProccess() {
+//   if (isProccessing) return ;
+//   if(taskQueue.length === 0) return;
 
-  isProccessing = true;
-  const task = taskQueue.shift()
-  try {
-    await task()
-  } catch (error) {
-    console.error("queue error at : ",error)
-  }  
+//   isProccessing = true;
+//   const task = taskQueue.shift()
+//   try {
+//     await task()
+//   } catch (error) {
+//     console.error("queue error at : ",error)
+//   }  
 
-  isProccessing = false;
-  queueProccess()
-}
+//   isProccessing = false;
+//   queueProccess()
+// }
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("session");
   
   const sock = makeWASocket({
     logger: pino({ level: "silent" }),
-    auth: state
+    auth : state
   });
   
   sock.ev.on("creds.update", saveCreds);
@@ -253,5 +253,4 @@ if(msg.message?.videoMessage && msg.message.videoMessage.caption == "!sticker"){
   });
 }
 
-taskQueue.push(async ()=> await startBot());
-queueProccess();
+startBot()
