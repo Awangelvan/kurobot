@@ -13,37 +13,28 @@ import pino from 'pino';
 import fs from 'fs'
 import sharp from 'sharp';
 
-// const taskQueue = [];
-// let isProccessing = false ;
-
-// async function queueProccess() {
-//   if (isProccessing) return ;
-//   if(taskQueue.length === 0) return;
-
-//   isProccessing = true;
-//   const task = taskQueue.shift()
-//   try {
-//     await task()
-//   } catch (error) {
-//     console.error("queue error at : ",error)
-//   }  
-
-//   isProccessing = false;
-//   queueProccess()
-// }
-
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("session");
   
   const sock = makeWASocket({
-    logger: pino({ level: "silent" }),
-    auth : state
+    logger: pino({ level: "info" }),
+    auth : state,
+    browser: ["Windows","Chrome","122.0.0.0"],
+    syncFullHistory: false
   });
-  
-  sock.ev.on("creds.update", saveCreds);
+
+  sock.ev.on("creds.update", saveCreds);  
+  sock.ev.on('connection.update',(update)=>{
+    if(update.qr){
+      qrcode.generate(update.qr,{small:true})
+    }
+  })
   
   sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
-    if (qr) qrcode.generate(qr, { small: true });
+    if (qr){
+      console.log('scan this qrcode !')
+      qrcode.generate(qr, { small: true });
+    }       
 
     if (connection === "open") {
       console.log("=== KuroBot is active! ===");
@@ -248,7 +239,6 @@ if(msg.message?.videoMessage && msg.message.videoMessage.caption == "!sticker"){
       }
 
       
-      // download image
     }
   });
 }
